@@ -1,0 +1,612 @@
+import 'package:flutter/material.dart';
+import '../core/theme.dart';
+import '../models/task.dart';
+import '../services/storage_service.dart';
+import '../services/ai_service.dart';
+
+class PlannerScreen extends StatefulWidget {
+  const PlannerScreen({super.key});
+
+  @override
+  State<PlannerScreen> createState() => _PlannerScreenState();
+}
+
+class _PlannerScreenState extends State<PlannerScreen> {
+  List<Task> _tasks = [];
+  bool _isGeneratingPlan = false;
+  String? _aiPlan;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadTasks();
+  }
+
+  void _loadTasks() {
+    setState(() {
+      _tasks = StorageService.getTasks();
+    });
+  }
+
+  Future<void> _generateAiPlan() async {
+    if (_tasks.isEmpty) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Add some tasks first!')));
+      return;
+    }
+
+    setState(() => _isGeneratingPlan = true);
+
+    final latestMood = StorageService.getLatestMood();
+    final energy = latestMood?.energy ?? 5;
+    final stress = latestMood?.stress ?? 5;
+    final taskTitles = _tasks
+        .where((t) => !t.isCompleted)
+        .map((t) => t.title)
+        .toList();
+
+    final plan = await AiService.generateStudyPlan(taskTitles, energy, stress);
+
+    setState(() {
+      _isGeneratingPlan = false;
+      _aiPlan = plan;
+    });
+  }
+
+  void _showAddTaskDialog() {
+    final titleController = TextEditingController();
+    final descController = TextEditingController();
+    int priority = 2;
+    int estimatedMinutes = 30;
+    DateTime? deadline;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: AppTheme.card,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setModalState) => Padding(
+          padding: EdgeInsets.fromLTRB(
+            20,
+            20,
+            20,
+            MediaQuery.of(ctx).viewInsets.bottom + 20,
+          ),
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Handle bar
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: AppTheme.textSecondary,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 20),
+
+                Text(
+                  'Add New Task',
+                  style: Theme.of(context).textTheme.headlineMedium,
+                ),
+                const SizedBox(height: 20),
+
+                // Title
+                TextField(
+                  controller: titleController,
+                  decoration: const InputDecoration(
+                    hintText: 'Task title *',
+                    prefixIcon: Icon(Icons.task_alt, color: AppTheme.primary),
+                  ),
+                ),
+                const SizedBox(height: 12),
+
+                // Description
+                TextField(
+                  controller: descController,
+                  maxLines: 2,
+                  decoration: const InputDecoration(
+                    hintText: 'Description (optional)',
+                    prefixIcon: Icon(
+                      Icons.notes,
+                      color: AppTheme.textSecondary,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                // Priority
+                Text(
+                  'Priority',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    _buildPriorityChip(
+                      ctx,
+                      setModalState,
+                      1,
+                      'Low 🟢',
+                      priority,
+                      (v) => priority = v,
+                    ),
+                    const SizedBox(width: 8),
+                    _buildPriorityChip(
+                      ctx,
+                      setModalState,
+                      2,
+                      'Medium 🟡',
+                      priority,
+                      (v) => priority = v,
+                    ),
+                    const SizedBox(width: 8),
+                    _buildPriorityChip(
+                      ctx,
+                      setModalState,
+                      3,
+                      'High 🔴',
+                      priority,
+                      (v) => priority = v,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+
+                // Estimated time
+                Text(
+                  'Estimated Time: $estimatedMinutes min',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                Slider(
+                  value: estimatedMinutes.toDouble(),
+                  min: 15,
+                  max: 180,
+                  divisions: 11,
+                  activeColor: AppTheme.primary,
+                  onChanged: (v) =>
+                      setModalState(() => estimatedMinutes = v.round()),
+                ),
+                const SizedBox(height: 8),
+
+                // Deadline
+                GestureDetector(
+                  onTap: () async {
+                    final picked = await showDatePicker(
+                      context: ctx,
+                      initialDate: DateTime.now(),
+                      firstDate: DateTime.now(),
+                      lastDate: DateTime.now().add(const Duration(days: 365)),
+                      builder: (context, child) => Theme(
+                        data: Theme.of(context).copyWith(
+                          colorScheme: const ColorScheme.dark(
+                            primary: AppTheme.primary,
+                            surface: AppTheme.card,
+                          ),
+                        ),
+                        child: child!,
+                      ),
+                    );
+                    if (picked != null) {
+                      setModalState(() => deadline = picked);
+                    }
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: AppTheme.surface,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(
+                          Icons.calendar_today,
+                          color: AppTheme.primary,
+                          size: 18,
+                        ),
+                        const SizedBox(width: 10),
+                        Text(
+                          deadline == null
+                              ? 'Set Deadline (optional)'
+                              : '${deadline!.day}/${deadline!.month}/${deadline!.year}',
+                          style: TextStyle(
+                            color: deadline == null
+                                ? AppTheme.textSecondary
+                                : AppTheme.textPrimary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 24),
+
+                // Save button
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      if (titleController.text.trim().isEmpty) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Please enter a task title'),
+                          ),
+                        );
+                        return;
+                      }
+                      final task = Task(
+                        id: DateTime.now().millisecondsSinceEpoch.toString(),
+                        title: titleController.text.trim(),
+                        description: descController.text.isEmpty
+                            ? null
+                            : descController.text,
+                        deadline: deadline,
+                        priority: priority,
+                        estimatedMinutes: estimatedMinutes,
+                        createdAt: DateTime.now(),
+                      );
+                      StorageService.saveTask(task);
+                      Navigator.pop(ctx);
+                      _loadTasks();
+                    },
+                    child: const Text('Save Task'),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPriorityChip(
+    BuildContext ctx,
+    StateSetter setModalState,
+    int value,
+    String label,
+    int current,
+    Function(int) onSelect,
+  ) {
+    final isSelected = current == value;
+    return GestureDetector(
+      onTap: () => setModalState(() => onSelect(value)),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? AppTheme.primary.withValues(alpha: 0.2)
+              : AppTheme.surface,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: isSelected ? AppTheme.primary : Colors.transparent,
+          ),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: isSelected ? AppTheme.primary : AppTheme.textSecondary,
+            fontSize: 13,
+          ),
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final pendingTasks = _tasks.where((t) => !t.isCompleted).toList();
+    final completedTasks = _tasks.where((t) => t.isCompleted).toList();
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Smart Planner'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios),
+          onPressed: () => Navigator.pop(context),
+        ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.auto_awesome, color: AppTheme.primary),
+            onPressed: _generateAiPlan,
+            tooltip: 'Generate AI Plan',
+          ),
+        ],
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: _showAddTaskDialog,
+        backgroundColor: AppTheme.primary,
+        child: const Icon(Icons.add, color: Colors.white),
+      ),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // ─── AI Plan Card ──────────────────────────
+              if (_isGeneratingPlan)
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: AppTheme.card,
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: const Row(
+                    children: [
+                      SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: AppTheme.primary,
+                        ),
+                      ),
+                      SizedBox(width: 12),
+                      Text(
+                        'Generating your study plan...',
+                        style: TextStyle(color: AppTheme.textSecondary),
+                      ),
+                    ],
+                  ),
+                ),
+
+              if (_aiPlan != null && !_isGeneratingPlan) ...[
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        AppTheme.primary.withValues(alpha: 0.2),
+                        AppTheme.secondary.withValues(alpha: 0.1),
+                      ],
+                    ),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: AppTheme.primary.withValues(alpha: 0.3),
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Row(
+                            children: [
+                              const Icon(
+                                Icons.auto_awesome,
+                                color: AppTheme.primary,
+                                size: 16,
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                'AI Study Plan',
+                                style: Theme.of(context).textTheme.titleMedium
+                                    ?.copyWith(color: AppTheme.primary),
+                              ),
+                            ],
+                          ),
+                          IconButton(
+                            icon: const Icon(
+                              Icons.close,
+                              color: AppTheme.textSecondary,
+                              size: 18,
+                            ),
+                            onPressed: () => setState(() => _aiPlan = null),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        _aiPlan!,
+                        style: Theme.of(context).textTheme.bodyLarge,
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 20),
+              ],
+
+              // ─── Pending Tasks ─────────────────────────
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Pending (${pendingTasks.length})',
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+
+              if (pendingTasks.isEmpty)
+                _buildEmptyState(
+                  'No pending tasks 🎉',
+                  'Tap + to add a new task',
+                )
+              else
+                ...pendingTasks.map((task) => _buildTaskCard(task, false)),
+
+              if (completedTasks.isNotEmpty) ...[
+                const SizedBox(height: 24),
+                Text(
+                  'Completed (${completedTasks.length})',
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+                const SizedBox(height: 12),
+                ...completedTasks.map((task) => _buildTaskCard(task, true)),
+              ],
+
+              const SizedBox(height: 80),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTaskCard(Task task, bool isCompleted) {
+    return Dismissible(
+      key: Key(task.id),
+      direction: DismissDirection.endToStart,
+      background: Container(
+        alignment: Alignment.centerRight,
+        padding: const EdgeInsets.only(right: 20),
+        margin: const EdgeInsets.only(bottom: 10),
+        decoration: BoxDecoration(
+          color: AppTheme.accent.withValues(alpha: 0.2),
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: const Icon(Icons.delete_outline, color: AppTheme.accent),
+      ),
+      onDismissed: (_) async {
+        await StorageService.deleteTask(task.id);
+        _loadTasks();
+      },
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 10),
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: AppTheme.card,
+          borderRadius: BorderRadius.circular(16),
+          border: task.isOverdue
+              ? Border.all(color: AppTheme.accent.withValues(alpha: 0.5))
+              : task.isDeadlineNear
+              ? Border.all(color: AppTheme.warning.withValues(alpha: 0.5))
+              : null,
+        ),
+        child: Row(
+          children: [
+            // Checkbox
+            GestureDetector(
+              onTap: () async {
+                task.isCompleted = !task.isCompleted;
+                await StorageService.updateTask(task);
+                _loadTasks();
+              },
+              child: Container(
+                width: 24,
+                height: 24,
+                decoration: BoxDecoration(
+                  color: isCompleted
+                      ? AppTheme.success.withValues(alpha: 0.2)
+                      : Colors.transparent,
+                  border: Border.all(
+                    color: isCompleted
+                        ? AppTheme.success
+                        : AppTheme.textSecondary,
+                    width: 2,
+                  ),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: isCompleted
+                    ? const Icon(Icons.check, color: AppTheme.success, size: 16)
+                    : null,
+              ),
+            ),
+            const SizedBox(width: 12),
+
+            // Task info
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    task.title,
+                    style: TextStyle(
+                      color: isCompleted
+                          ? AppTheme.textSecondary
+                          : AppTheme.textPrimary,
+                      fontWeight: FontWeight.w500,
+                      decoration: isCompleted
+                          ? TextDecoration.lineThrough
+                          : null,
+                    ),
+                  ),
+                  if (task.deadline != null) ...[
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.schedule,
+                          size: 12,
+                          color: task.isOverdue
+                              ? AppTheme.accent
+                              : task.isDeadlineNear
+                              ? AppTheme.warning
+                              : AppTheme.textSecondary,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          task.isOverdue
+                              ? 'Overdue!'
+                              : task.isDeadlineNear
+                              ? 'Due soon!'
+                              : '${task.deadline!.day}/${task.deadline!.month}/${task.deadline!.year}',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: task.isOverdue
+                                ? AppTheme.accent
+                                : task.isDeadlineNear
+                                ? AppTheme.warning
+                                : AppTheme.textSecondary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ],
+              ),
+            ),
+
+            // Priority + time
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text(task.priorityLabel, style: const TextStyle(fontSize: 12)),
+                const SizedBox(height: 4),
+                Text(
+                  '${task.estimatedMinutes}m',
+                  style: const TextStyle(
+                    color: AppTheme.textSecondary,
+                    fontSize: 11,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEmptyState(String title, String subtitle) {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: AppTheme.card,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Center(
+        child: Column(
+          children: [
+            const Icon(Icons.task_alt, color: AppTheme.textSecondary, size: 40),
+            const SizedBox(height: 10),
+            Text(title, style: Theme.of(context).textTheme.titleMedium),
+            Text(subtitle, style: Theme.of(context).textTheme.bodyMedium),
+          ],
+        ),
+      ),
+    );
+  }
+}
