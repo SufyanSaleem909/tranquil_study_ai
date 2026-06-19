@@ -402,11 +402,15 @@ class _CalmScreenState extends State<CalmScreen> with TickerProviderStateMixin {
                     ),
                   ),
                   const SizedBox(width: 12),
-                  Text(
-                    'Notice ${step['number']} ${step['sense']}',
-                    style: Theme.of(context).textTheme.bodyLarge,
-                    overflow: TextOverflow.ellipsis,
-                    maxLines: 2,
+                  Expanded(
+                    child: Text(
+                      'Notice ${step['number']} ${step['sense']}',
+                      style: Theme.of(context).textTheme.bodyLarge
+                          ?.copyWith(fontSize: 13),
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 2,
+                      softWrap: true,
+                    ),
                   ),
                 ],
               ),

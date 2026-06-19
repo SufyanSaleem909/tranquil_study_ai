@@ -52,6 +52,7 @@ class _HomeScreenState extends State<HomeScreen> {
         .length;
 
     return Scaffold(
+      backgroundColor: AppTheme.homeBackground,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(20),
@@ -67,9 +68,13 @@ class _HomeScreenState extends State<HomeScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(
-                        _getGreeting(),
-                        style: Theme.of(context).textTheme.headlineMedium,
+                      Flexible(
+                        child: Text(
+                          _getGreeting(),
+                          style: Theme.of(context).textTheme.headlineMedium
+                              ?.copyWith(color: AppTheme.homeGreetingText),
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
                       Row(
                         children: [
@@ -82,14 +87,12 @@ class _HomeScreenState extends State<HomeScreen> {
                               width: 40,
                               height: 40,
                               decoration: BoxDecoration(
-                                color: AppTheme.secondary.withValues(
-                                  alpha: 0.15,
-                                ),
+                                color: AppTheme.homeHistoryIconBg,
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: const Icon(
                                 Icons.history,
-                                color: AppTheme.secondary,
+                                color: AppTheme.homeHistoryIcon,
                                 size: 20,
                               ),
                             ),
@@ -104,12 +107,12 @@ class _HomeScreenState extends State<HomeScreen> {
                               width: 40,
                               height: 40,
                               decoration: BoxDecoration(
-                                color: AppTheme.primary.withValues(alpha: 0.15),
+                                color: AppTheme.homeSettingsIconBg,
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: const Icon(
                                 Icons.settings_outlined,
-                                color: AppTheme.primary,
+                                color: AppTheme.homeSettingsIcon,
                                 size: 20,
                               ),
                             ),
@@ -121,7 +124,9 @@ class _HomeScreenState extends State<HomeScreen> {
                   const SizedBox(height: 4),
                   Text(
                     _getMotivationalQuote(),
-                    style: Theme.of(context).textTheme.bodyMedium,
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: AppTheme.homeSubtitleText,
+                    ),
                   ),
                 ],
               ),
@@ -143,7 +148,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     icon: Icons.task_alt,
                     label: 'Pending Tasks',
                     value: '$pendingTasks',
-                    color: AppTheme.secondary,
+                    color: AppTheme.homeStatIcon1,
                   ),
                   const SizedBox(width: 12),
                   _buildStatCard(
@@ -151,7 +156,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     icon: Icons.history,
                     label: 'Check-ins',
                     value: '${StorageService.getMoodHistory().length}',
-                    color: AppTheme.accent,
+                    color: AppTheme.homeStatIcon2,
                   ),
                 ],
               ),
@@ -161,7 +166,9 @@ class _HomeScreenState extends State<HomeScreen> {
               // ─── Feature Grid ──────────────────────────
               Text(
                 'What do you need?',
-                style: Theme.of(context).textTheme.titleLarge,
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  color: AppTheme.homeGreetingText,
+                ),
               ),
               const SizedBox(height: 16),
 
@@ -178,15 +185,21 @@ class _HomeScreenState extends State<HomeScreen> {
                     icon: Icons.favorite_outline,
                     title: 'Mind Check-In',
                     subtitle: 'Log your mood & energy',
-                    color: AppTheme.accent,
+                    cardColor: AppTheme.homeFeatureCard1,
+                    iconColor: AppTheme.homeFeatureIcon,
+                    titleColor: AppTheme.homeFeatureTitle,
+                    subtitleColor: AppTheme.homeFeatureSubtitle,
                     route: AppRoutes.checkIn,
                   ),
                   _buildFeatureCard(
                     context,
                     icon: Icons.chat_bubble_outline,
                     title: 'AI Companion',
-                    subtitle: 'Talk to Tranquil Study AI',
-                    color: AppTheme.primary,
+                    subtitle: 'Talk to Tranquil AI',
+                    cardColor: AppTheme.homeFeatureCard2,
+                    iconColor: AppTheme.homeFeatureIcon,
+                    titleColor: AppTheme.homeFeatureTitle,
+                    subtitleColor: AppTheme.homeFeatureSubtitle,
                     route: AppRoutes.chat,
                   ),
                   _buildFeatureCard(
@@ -194,7 +207,10 @@ class _HomeScreenState extends State<HomeScreen> {
                     icon: Icons.calendar_today_outlined,
                     title: 'Smart Planner',
                     subtitle: 'Manage your tasks',
-                    color: AppTheme.secondary,
+                    cardColor: AppTheme.homeFeatureCard3,
+                    iconColor: AppTheme.homeFeatureIcon,
+                    titleColor: AppTheme.homeFeatureTitle,
+                    subtitleColor: AppTheme.homeFeatureSubtitle,
                     route: AppRoutes.planner,
                   ),
                   _buildFeatureCard(
@@ -202,7 +218,10 @@ class _HomeScreenState extends State<HomeScreen> {
                     icon: Icons.spa_outlined,
                     title: 'Calm Toolkit',
                     subtitle: 'Breathing & exercises',
-                    color: const Color(0xFF4CAF50),
+                    cardColor: AppTheme.homeFeatureCard4,
+                    iconColor: AppTheme.homeFeatureIcon,
+                    titleColor: AppTheme.homeFeatureTitle,
+                    subtitleColor: AppTheme.homeFeatureSubtitle,
                     route: AppRoutes.calm,
                   ),
                 ],
@@ -220,17 +239,10 @@ class _HomeScreenState extends State<HomeScreen> {
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            AppTheme.primary.withValues(alpha: 0.3),
-            AppTheme.secondary.withValues(alpha: 0.2),
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
+        color: AppTheme.homeMoodCard,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: AppTheme.primary.withValues(alpha: 0.3),
+          color: AppTheme.homeMoodCardBorder.withValues(alpha: 0.4),
           width: 1,
         ),
       ),
@@ -243,7 +255,7 @@ class _HomeScreenState extends State<HomeScreen> {
               Text(
                 'Latest Check-In',
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  color: AppTheme.textSecondary,
+                  color: AppTheme.homeGreetingText,
                 ),
               ),
               TextButton(
@@ -251,7 +263,10 @@ class _HomeScreenState extends State<HomeScreen> {
                   context,
                   AppRoutes.checkIn,
                 ).then((_) => _loadLatestMood()),
-                child: const Text('Update'),
+                child: Text(
+                  'Update',
+                  style: TextStyle(color: AppTheme.homeGreetingText),
+                ),
               ),
             ],
           ),
@@ -274,13 +289,13 @@ class _HomeScreenState extends State<HomeScreen> {
       children: [
         Text(
           label,
-          style: const TextStyle(color: AppTheme.textSecondary, fontSize: 12),
+          style: TextStyle(color: AppTheme.homeGreetingText, fontSize: 12),
         ),
         const SizedBox(height: 4),
         Text(
           value,
-          style: const TextStyle(
-            color: AppTheme.textPrimary,
+          style: TextStyle(
+            color: AppTheme.homeGreetingText,
             fontSize: 13,
             fontWeight: FontWeight.w600,
           ),
@@ -298,10 +313,10 @@ class _HomeScreenState extends State<HomeScreen> {
       child: Container(
         padding: const EdgeInsets.all(18),
         decoration: BoxDecoration(
-          color: AppTheme.card,
+          color: AppTheme.homeStatCard,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: AppTheme.primary.withValues(alpha: 0.4),
+            color: AppTheme.homeMoodCardBorder.withValues(alpha: 0.4),
             width: 1.5,
           ),
         ),
@@ -310,12 +325,12 @@ class _HomeScreenState extends State<HomeScreen> {
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: AppTheme.primary.withValues(alpha: 0.2),
+                color: AppTheme.homeFeatureCard1.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.add_reaction_outlined,
-                color: AppTheme.primary,
+                color: AppTheme.homeFeatureCard1,
               ),
             ),
             const SizedBox(width: 14),
@@ -325,19 +340,23 @@ class _HomeScreenState extends State<HomeScreen> {
                 children: [
                   Text(
                     'How are you feeling?',
-                    style: Theme.of(context).textTheme.titleMedium,
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      color: AppTheme.homeGreetingText,
+                    ),
                   ),
                   const SizedBox(height: 2),
                   Text(
                     'Tap to do your first check-in',
-                    style: Theme.of(context).textTheme.bodyMedium,
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: AppTheme.homeSubtitleText,
+                    ),
                   ),
                 ],
               ),
             ),
-            const Icon(
+            Icon(
               Icons.arrow_forward_ios,
-              color: AppTheme.textSecondary,
+              color: AppTheme.homeSubtitleText,
               size: 16,
             ),
           ],
@@ -357,7 +376,7 @@ class _HomeScreenState extends State<HomeScreen> {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: AppTheme.card,
+          color: AppTheme.homeStatCard,
           borderRadius: BorderRadius.circular(16),
         ),
         child: Row(
@@ -376,15 +395,17 @@ class _HomeScreenState extends State<HomeScreen> {
               children: [
                 Text(
                   value,
-                  style: Theme.of(
-                    context,
-                  ).textTheme.headlineMedium?.copyWith(fontSize: 22),
+                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                    fontSize: 22,
+                    color: AppTheme.homeGreetingText,
+                  ),
                 ),
                 Text(
                   label,
-                  style: Theme.of(
-                    context,
-                  ).textTheme.bodyMedium?.copyWith(fontSize: 11),
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    fontSize: 11,
+                    color: AppTheme.homeSubtitleText,
+                  ),
                 ),
               ],
             ),
@@ -399,7 +420,10 @@ class _HomeScreenState extends State<HomeScreen> {
     required IconData icon,
     required String title,
     required String subtitle,
-    required Color color,
+    required Color cardColor,
+    required Color iconColor,
+    required Color titleColor,
+    required Color subtitleColor,
     required String route,
   }) {
     return GestureDetector(
@@ -408,9 +432,8 @@ class _HomeScreenState extends State<HomeScreen> {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: AppTheme.card,
+          color: cardColor,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: color.withValues(alpha: 0.2), width: 1),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -419,26 +442,28 @@ class _HomeScreenState extends State<HomeScreen> {
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.15),
+                color: iconColor.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Icon(icon, color: color, size: 24),
+              child: Icon(icon, color: iconColor, size: 24),
             ),
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   title,
-                  style: Theme.of(
-                    context,
-                  ).textTheme.titleMedium?.copyWith(fontSize: 14),
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontSize: 14,
+                    color: titleColor,
+                  ),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   subtitle,
-                  style: Theme.of(
-                    context,
-                  ).textTheme.bodyMedium?.copyWith(fontSize: 11),
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    fontSize: 11,
+                    color: subtitleColor.withValues(alpha: 0.8),
+                  ),
                 ),
               ],
             ),

@@ -26,12 +26,12 @@ void main() async {
   final prefs = await SharedPreferences.getInstance();
   final onboardingComplete = prefs.getBool('onboarding_complete') ?? false;
 
-  runApp(ZenFocusApp(showOnboarding: !onboardingComplete));
+  runApp(TranquilStudyApp(showOnboarding: !onboardingComplete));
 }
 
-class ZenFocusApp extends StatelessWidget {
+class TranquilStudyApp extends StatelessWidget {
   final bool showOnboarding;
-  const ZenFocusApp({super.key, required this.showOnboarding});
+  const TranquilStudyApp({super.key, required this.showOnboarding});
 
   @override
   Widget build(BuildContext context) {
