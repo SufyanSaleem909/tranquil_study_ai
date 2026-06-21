@@ -81,7 +81,6 @@ class _PlannerScreenState extends State<PlannerScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
-                // Handle bar
                 Center(
                   child: Container(
                     width: 40,
@@ -93,14 +92,12 @@ class _PlannerScreenState extends State<PlannerScreen> {
                   ),
                 ),
                 const SizedBox(height: 20),
-
                 Text(
                   'Add New Task',
                   style: Theme.of(context).textTheme.headlineMedium,
                 ),
                 const SizedBox(height: 20),
 
-                // Title
                 TextField(
                   controller: titleController,
                   decoration: const InputDecoration(
@@ -110,7 +107,6 @@ class _PlannerScreenState extends State<PlannerScreen> {
                 ),
                 const SizedBox(height: 12),
 
-                // Description
                 TextField(
                   controller: descController,
                   maxLines: 2,
@@ -124,7 +120,6 @@ class _PlannerScreenState extends State<PlannerScreen> {
                 ),
                 const SizedBox(height: 16),
 
-                // Priority
                 Text(
                   'Priority',
                   style: Theme.of(context).textTheme.titleMedium,
@@ -162,7 +157,6 @@ class _PlannerScreenState extends State<PlannerScreen> {
                 ),
                 const SizedBox(height: 16),
 
-                // Estimated time
                 Text(
                   'Estimated Time: $estimatedMinutes min',
                   style: Theme.of(context).textTheme.titleMedium,
@@ -178,7 +172,6 @@ class _PlannerScreenState extends State<PlannerScreen> {
                 ),
                 const SizedBox(height: 8),
 
-                // Deadline
                 GestureDetector(
                   onTap: () async {
                     final picked = await showDatePicker(
@@ -188,17 +181,17 @@ class _PlannerScreenState extends State<PlannerScreen> {
                       lastDate: DateTime.now().add(const Duration(days: 365)),
                       builder: (context, child) => Theme(
                         data: Theme.of(context).copyWith(
-                          colorScheme: const ColorScheme.dark(
+                          colorScheme: const ColorScheme.light(
                             primary: AppTheme.primary,
-                            surface: AppTheme.card,
+                            onPrimary: Colors.white,
+                            surface: Colors.white,
+                            onSurface: AppTheme.textPrimary,
                           ),
                         ),
                         child: child!,
                       ),
                     );
-                    if (picked != null) {
-                      setModalState(() => deadline = picked);
-                    }
+                    if (picked != null) setModalState(() => deadline = picked);
                   },
                   child: Container(
                     padding: const EdgeInsets.all(14),
@@ -230,15 +223,25 @@ class _PlannerScreenState extends State<PlannerScreen> {
                 ),
                 const SizedBox(height: 24),
 
-                // Save button
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
                     onPressed: () {
                       if (titleController.text.trim().isEmpty) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Please enter a task title'),
+                        showDialog(
+                          context: ctx,
+                          builder: (c) => AlertDialog(
+                            backgroundColor: AppTheme.card,
+                            title: const Text('Missing Title'),
+                            content: const Text(
+                              'Please enter a task title to continue.',
+                            ),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.pop(c),
+                                child: const Text('OK'),
+                              ),
+                            ],
                           ),
                         );
                         return;
@@ -398,7 +401,9 @@ class _PlannerScreenState extends State<PlannerScreen> {
                         data: Theme.of(context).copyWith(
                           colorScheme: const ColorScheme.light(
                             primary: AppTheme.primary,
-                            surface: AppTheme.card,
+                            onPrimary: Colors.white,
+                            surface: Colors.white,
+                            onSurface: AppTheme.textPrimary,
                           ),
                         ),
                         child: child!,
@@ -441,9 +446,20 @@ class _PlannerScreenState extends State<PlannerScreen> {
                   child: ElevatedButton(
                     onPressed: () {
                       if (titleController.text.trim().isEmpty) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Please enter a task title'),
+                        showDialog(
+                          context: ctx,
+                          builder: (c) => AlertDialog(
+                            backgroundColor: AppTheme.card,
+                            title: const Text('Missing Title'),
+                            content: const Text(
+                              'Please enter a task title to continue.',
+                            ),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.pop(c),
+                                child: const Text('OK'),
+                              ),
+                            ],
                           ),
                         );
                         return;
@@ -525,8 +541,8 @@ class _PlannerScreenState extends State<PlannerScreen> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: _showAddTaskDialog,
-        backgroundColor: AppTheme.primary,
-        child: const Icon(Icons.add, color: Colors.white),
+        backgroundColor: AppTheme.plannerFab,
+        child: Icon(Icons.add, color: AppTheme.plannerFabIcon),
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -534,7 +550,6 @@ class _PlannerScreenState extends State<PlannerScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // ─── AI Plan Card ──────────────────────────
               if (_isGeneratingPlan)
                 Container(
                   padding: const EdgeInsets.all(16),
@@ -565,12 +580,7 @@ class _PlannerScreenState extends State<PlannerScreen> {
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        AppTheme.primary.withValues(alpha: 0.2),
-                        AppTheme.secondary.withValues(alpha: 0.1),
-                      ],
-                    ),
+                    color: AppTheme.plannerAiCard,
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(
                       color: AppTheme.primary.withValues(alpha: 0.3),
@@ -610,7 +620,9 @@ class _PlannerScreenState extends State<PlannerScreen> {
                       const SizedBox(height: 8),
                       Text(
                         _aiPlan!,
-                        style: Theme.of(context).textTheme.bodyLarge,
+                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                          color: AppTheme.plannerAiText,
+                        ),
                       ),
                     ],
                   ),
@@ -618,15 +630,9 @@ class _PlannerScreenState extends State<PlannerScreen> {
                 const SizedBox(height: 20),
               ],
 
-              // ─── Pending Tasks ─────────────────────────
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'Pending (${pendingTasks.length})',
-                    style: Theme.of(context).textTheme.titleLarge,
-                  ),
-                ],
+              Text(
+                'Pending (${pendingTasks.length})',
+                style: Theme.of(context).textTheme.titleLarge,
               ),
               const SizedBox(height: 12),
 
@@ -673,7 +679,6 @@ class _PlannerScreenState extends State<PlannerScreen> {
       ),
       child: Row(
         children: [
-          // Checkbox
           GestureDetector(
             onTap: () async {
               task.isCompleted = !task.isCompleted;
@@ -702,7 +707,6 @@ class _PlannerScreenState extends State<PlannerScreen> {
           ),
           const SizedBox(width: 12),
 
-          // Task info
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -753,7 +757,6 @@ class _PlannerScreenState extends State<PlannerScreen> {
             ),
           ),
 
-          // Priority + time
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
@@ -771,7 +774,6 @@ class _PlannerScreenState extends State<PlannerScreen> {
 
           const SizedBox(width: 8),
 
-          // Edit & Delete buttons
           Column(
             children: [
               GestureDetector(
